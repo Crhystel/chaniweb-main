@@ -1,9 +1,9 @@
 [submodule "backend"]
-	path = backend
+	path = chaniweb-backend
 	url = https://github.com/Crhystel/chaniweb-backend.git
 [submodule "frontend"]
-	path = frontend
+	path = chaniweb-frontend
 	url = https://github.com/Crhystel/chaniweb-frontend.git
 [submodule "ingesta"]
-	path = ingesta
+	path = chaniweb-ingesta
 	url = https://github.com/Crhystel/chaniweb-ingesta.git
