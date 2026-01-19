@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy-nginx
+spec:
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+      - name: proxy
+        image: chaniweb-proxy:latest
+        ports:
+        - containerPort: 80
+---
+# Punto de entrada único (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: chaniweb-entrypoint
+spec:
+  type: LoadBalancer
+  selector:
+    app: proxy
+  ports:
+    - port: 80
+      targetPort: 80

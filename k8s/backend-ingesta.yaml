@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: v1
+    spec:
+      containers:
+      - name: backend
+        image: chaniweb-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: chaniweb-secrets
+              key: database-url
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+# Microservicio de Ingesta (Solo Deployment, no necesita Service)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingesta
+  labels:
+    app: ingesta
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingesta
+  template:
+    metadata:
+      labels:
+        app: ingesta
+        version: v1
+    spec:
+      containers:
+      - name: ingesta
+        image: chaniweb-ingesta:latest
+        env:
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: API_URL
+          value: "http://backend:8000/productos"
+        - name: MAX_WORKERS
+          value: "3"
+        - name: RETRY_ATTEMPTS
+          value: "3"
+        - name: STARTUP_DELAY
+          value: "15"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      restartPolicy: Always
