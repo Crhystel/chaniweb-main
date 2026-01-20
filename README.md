@@ -112,7 +112,7 @@ Chaniweb-2/
 ### **Variables de Entorno**
 ```bash
 DB_USER=chaniweb_user
-DB_PASSWORD=chaniweb_password
+DB_PASSWORD=TU_PASSWORD_SEGURO
 DB_NAME=chaniweb_db
 ```
 
@@ -134,7 +134,7 @@ docker-compose exec frontend sh
 ### **Producción**
 ```bash
 # Variables de entorno producción
-export DATABASE_URL=postgresql://user:password@prod-db:5432/chaniweb
+export DATABASE_URL=postgresql://user:PASSWORD_SEGURO@prod-db:5432/chaniweb
 export REDIS_URL=redis://prod-redis:6379
 
 # Deploy con datos frescos

@@ -3,9 +3,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER:-admin_chani}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChaniPassword2026!}
-      POSTGRES_DB: ${DB_NAME:-chaniweb_db}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,8 +29,8 @@ services:
     build: ./chaniweb-backend
     command: uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-admin_chani}:${DB_PASSWORD:-ChaniPassword2026!}@db:5432/${DB_NAME:-chaniweb_db}
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${AZURE_DB_URL}
+      REDIS_URL: ${AZURE_REDIS_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -47,8 +47,8 @@ services:
     build: ./chaniweb-backend
     command: python worker.py
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-admin_chani}:${DB_PASSWORD:-ChaniPassword2026!}@db:5432/${DB_NAME:-chaniweb_db}
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${AZURE_DB_URL}
+      REDIS_URL: ${AZURE_REDIS_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
   ingesta:
     build: ./chaniweb-ingesta
     environment:
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: ${AZURE_REDIS_URL}
     depends_on:
       redis:
         condition: service_healthy
