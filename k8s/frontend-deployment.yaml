@@ -2,10 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: chaniweb
-  labels:
-    app: frontend
-    version: v1
 spec:
   replicas: 2
   selector:
@@ -15,44 +11,20 @@ spec:
     metadata:
       labels:
         app: frontend
-        version: v1
     spec:
       containers:
-      - name: frontend
-        image: chaniweb-frontend:latest
-        ports:
-        - containerPort: 80
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
+        - name: frontend
+          image: tu-registro.azurecr.io/chaniweb-frontend:latest
+          ports:
+            - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: chaniweb
-  labels:
-    app: frontend
 spec:
   selector:
     app: frontend
   ports:
-  - port: 80
-    targetPort: 80
-  type: ClusterIP
+    - port: 80
+      targetPort: 80

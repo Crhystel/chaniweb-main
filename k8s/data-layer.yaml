@@ -1,4 +1,4 @@
-# PostgreSQL Deployment
+# PostgreSQL
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,17 +13,19 @@ spec:
         app: db
     spec:
       containers:
-      - name: postgres
-        image: postgres:15-alpine
-        env:
-        - name: POSTGRES_USER
-          valueFrom: { secretKeyRef: { name: chaniweb-secrets, key: db-user } }
-        - name: POSTGRES_PASSWORD
-          valueFrom: { secretKeyRef: { name: chaniweb-secrets, key: db-password } }
-        - name: POSTGRES_DB
-          valueFrom: { secretKeyRef: { name: chaniweb-secrets, key: db-name } }
+        - name: postgres
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                { secretKeyRef: { name: chaniweb-secrets, key: db-user } }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                { secretKeyRef: { name: chaniweb-secrets, key: db-password } }
+            - name: POSTGRES_DB
+              valueFrom:
+                { secretKeyRef: { name: chaniweb-secrets, key: db-name } }
 ---
-# Servicio interno para la DB
 apiVersion: v1
 kind: Service
 metadata:
@@ -34,7 +36,7 @@ spec:
   ports:
     - port: 5432
 ---
-# Redis Deployment y Service (Para el caché)
+# Redis
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,8 +51,8 @@ spec:
         app: redis
     spec:
       containers:
-      - name: redis
-        image: redis:7-alpine
+        - name: redis
+          image: redis:7-alpine
 ---
 apiVersion: v1
 kind: Service

@@ -12,12 +12,11 @@ spec:
         app: proxy
     spec:
       containers:
-      - name: proxy
-        image: chaniweb-proxy:latest
-        ports:
-        - containerPort: 80
+        - name: proxy
+          image: tu-registro.azurecr.io/chaniweb-proxy:latest
+          ports:
+            - containerPort: 80
 ---
-# Punto de entrada único (LoadBalancer)
 apiVersion: v1
 kind: Service
 metadata:

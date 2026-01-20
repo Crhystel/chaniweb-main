@@ -1,16 +1,17 @@
 version: "3.8"
 
 services:
+  # --- CAPA DE DATOS ---
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-admin_chani}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChaniPassword2026!}
+      POSTGRES_DB: ${DB_NAME:-chaniweb_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,10 +26,12 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- CAPA DE APLICACIÓN ---
   backend:
     build: ./chaniweb-backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DATABASE_URL: postgresql://${DB_USER:-admin_chani}:${DB_PASSWORD:-ChaniPassword2026!}@db:5432/${DB_NAME:-chaniweb_db}
       REDIS_URL: redis://redis:6379
     depends_on:
       db:
@@ -37,29 +40,42 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 20s
+      timeout: 5s
       retries: 3
+
+  # Consumidor de mensajes separado (Worker distribuido)
+  worker:
+    build: ./chaniweb-backend
+    command: python worker.py
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-admin_chani}:${DB_PASSWORD:-ChaniPassword2026!}@db:5432/${DB_NAME:-chaniweb_db}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   ingesta:
     build: ./chaniweb-ingesta
     environment:
       REDIS_URL: redis://redis:6379
-      API_URL: http://backend:8000/productos
     depends_on:
       redis:
         condition: service_healthy
-      backend:
-        condition: service_healthy
+      worker:
+        condition: service_started
 
   frontend:
     build: ./chaniweb-frontend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 20s
+      timeout: 5s
       retries: 3
 
+  # --- PUERTA DE ENTRADA (GATEWAY) ---
   proxy:
     build: ./chaniweb-proxy
     ports:
@@ -71,8 +87,8 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 20s
+      timeout: 5s
       retries: 3
 
 volumes:

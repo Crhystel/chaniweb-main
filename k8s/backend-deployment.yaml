@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chaniweb-backend
+  name: backend
 spec:
-  replicas: 2 # Escalabilidad
+  replicas: 2 # Para disponibilidad: si uno muere, el otro sigue
   selector:
     matchLabels:
       app: backend
@@ -13,13 +13,28 @@ spec:
         app: backend
     spec:
       containers:
-      - name: backend
-        image: chaniweb-backend:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: db-secret
-              key: url
+        - name: backend
+          image: tu-registro.azurecr.io/chaniweb-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                { secretKeyRef: { name: chaniweb-secrets, key: database-url } }
+            - name: REDIS_URL
+              value: "redis://redis:6379" # Usa el nombre del service de arriba
+          livenessProbe: # Kubernetes revisa si la API está viva
+            httpGet:
+              path: /health
+              port: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000
