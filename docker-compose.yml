@@ -1,5 +1,5 @@
 services:
-  # --- CAPA DE DATOS ---
+  # --- CAPA DE DATOS (PERSISTENCIA Y MENSAJERÍA) ---
   db:
     image: postgres:15-alpine
     environment:
@@ -24,7 +24,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # --- CAPA DE APLICACIÓN ---
+  # --- CAPA DE LÓGICA Y PROCESAMIENTO ---
   backend:
     build: ./chaniweb-backend
     command: uvicorn main:app --host 0.0.0.0 --port 8000
@@ -42,7 +42,6 @@ services:
       timeout: 5s
       retries: 3
 
-  # Consumidor de mensajes separado (Worker distribuido)
   worker:
     build: ./chaniweb-backend
     command: python worker.py
@@ -55,16 +54,43 @@ services:
       redis:
         condition: service_healthy
 
-  ingesta:
+  # --- CAPA DE INGESTA DISTRIBUIDA (SCRAPERS SEPARADOS) ---
+  # Si uno de estos falla, los otros dos siguen alimentando la base de datos.
+
+  ingesta-supermaxi:
     build: ./chaniweb-ingesta
     environment:
       REDIS_URL: ${AZURE_REDIS_URL}
+      TARGET_SOURCE: "Supermaxi"
     depends_on:
       redis:
         condition: service_healthy
       worker:
         condition: service_started
 
+  ingesta-aki:
+    build: ./chaniweb-ingesta
+    environment:
+      REDIS_URL: ${AZURE_REDIS_URL}
+      TARGET_SOURCE: "Aki"
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+
+  ingesta-comisariato:
+    build: ./chaniweb-ingesta
+    environment:
+      REDIS_URL: ${AZURE_REDIS_URL}
+      TARGET_SOURCE: "Mi Comisariato"
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+
+  # --- CAPA DE PRESENTACIÓN ---
   frontend:
     build: ./chaniweb-frontend
     healthcheck:
@@ -73,7 +99,7 @@ services:
       timeout: 5s
       retries: 3
 
-  # --- PUERTA DE ENTRADA (GATEWAY) ---
+  # --- PUERTA DE ENTRADA (GATEWAY / REVERSE PROXY) ---
   proxy:
     build: ./chaniweb-proxy
     ports:
